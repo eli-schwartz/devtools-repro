@@ -34,11 +34,11 @@ Commands
 **build**::
         Builds a package twice and compares sha512 checksums to check for
         reproducability issues. This assumes the current directory contains a
-        PKGBUILD. See linkman:PKGBUILD[5] (This is the default command)   
+        PKGBUILD. See linkman:PKGBUILD[5] (This is the default command)
 
 **check** <package>::
         TBA
-    
+
 
 Options
 -------
