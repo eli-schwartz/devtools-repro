@@ -144,20 +144,17 @@ create_snapshot (){
 
 set_build_env(){
     local build=$1
-    msg "Settings build environemnt..."
-    exec_nspawn $build \
-    tee /home/builduser/.bashrc <<-__END__
-export TZ=$TZ
-export LANG=$LANG
-export LC_ALL=$LC_ALL
+    msg "Settings build environment..."
+    {
+        for var in TZ LANG LC_ALL; do
+            printf 'export %s=%s' "$var" "${!var}"
+        done
+    } > "$BUILDDIRECTORY/$build"/home/builduser/.bashrc
 __END__
 
     # Generate locale
-    exec_nspawn $build \
-bash <<-__END__
-echo $LOCALE > /etc/locale.gen
-locale-gen
-__END__
+    echo "$LOCALE" > "$BUILDDIRECTORY/$build"/etc/locale.gen
+    exec_nspawn $build locale-gen
 }
 
 build_package(){
@@ -226,14 +223,8 @@ init_chroot(){
 
         printf 'builduser ALL = NOPASSWD: /usr/bin/pacman\n' > "$BUILDDIRECTORY"/root/etc/sudoers.d/builduser-pacman
         exec_nspawn root useradd -m -G wheel -s /bin/bash builduser
-
-        exec_nspawn root \
-    bash <<-__END__
-set -e
-mkdir -p /home/builduser/.gnupg
-echo keyserver-options auto-key-retrieve > /home/builduser/.gnupg/gpg.conf
-chown -R builduser /home/builduser/.gnupg
-__END__
+        echo "keyserver-options auto-key-retrieve" | install -dm644 /dev/stdin "$BUILDDIRECTORY/root"/home/builduser/.gnupg/gpg.conf
+        exec_nspawn root chown -R builduser /home/builduser/.gnupg
         cp $makepkg_conf "$BUILDDIRECTORY"/root/etc/makepkg.conf
         cp $pacman_conf "$BUILDDIRECTORY"/root/etc/pacman.conf
     else
